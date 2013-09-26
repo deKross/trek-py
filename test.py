@@ -193,6 +193,12 @@ class TestQuery:
     def instances_test(self):
         assert_set_equal(set(Query(type='Klingon', quadrant=self.quadrant)), set(self.klingons))
 
+    def chained_queries_test(self):
+        assert_set_equal(set(Query(quadrant=self.quadrant).filter(type='Klingon')), set(self.klingons))
+
+        q = Query(quadrant=self.quadrant)
+        assert_is(q.filter('Vessel', subclasses=True).filter('Enterprise').get(), self.sector.obj)
+
 
 class TestGalaxy:
     @classmethod

@@ -149,6 +149,11 @@ class Query(object):
             return random.sample(self.queryset, count)
         return random.choice(self.queryset)
 
+    def get(self):
+        if self.queryset:
+            return self.queryset[0]
+        return 0
+
     def _filter(self, *args, **kwargs):
         types = []
         for arg in args:
@@ -159,11 +164,11 @@ class Query(object):
 
         if types:
             types = [cls for cls in SpaceObject.get_subclasses() if cls.__name__ in types]
-            if kwargs.get('subclasses'):
-                super_types = list(types)
-                for cls in super_types:
-                    types.extend(cls.get_subclasses())
-                types = list(set(types))
+            #if kwargs.get('subclasses'):
+                #super_types = list(types)
+                #for cls in super_types:
+                    #types.extend(cls.get_subclasses())
+                #types = list(set(types))
 
         quadrant_check = lambda quad: True
         sector_check = lambda sec: True
@@ -186,11 +191,15 @@ class Query(object):
         if self.queryset:
             data = self.queryset
             if types:
+                if kwargs.get('subclasses'):
+                    super_types = list(types)
+                    for cls in super_types:
+                        types.extend(cls.get_subclasses())
                 types = set(types)
-                object_check = lambda obj: obj in types
+                object_check = lambda obj: type(obj) in types
         else:
             if types:
-                data = itertools.chain.from_iterable(cls.get_instances() for cls in types)
+                data = itertools.chain.from_iterable(cls.get_instances(kwargs.get('subclasses', False)) for cls in types)
             else:
                 data = itertools.chain.from_iterable(cls.get_instances() for cls in SpaceObject.get_subclasses())
 
@@ -471,7 +480,9 @@ class Galaxy(WrappedColumn, InstancesList, PrintableArray, IteratorOnArray):
             index = i * self.size
             quads = self.quads[index:index + self.size]
             strings = [quad.get_strings() for quad in quads]
-            return strings
+            for j in xrange(Quadrant.size):
+                result.append(Quadrant.string_separator.join(quad[j] for quad in strings))
+        return '\n'.join(result)
 
 
 gal = None
